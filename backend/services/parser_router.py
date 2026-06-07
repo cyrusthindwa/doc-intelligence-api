@@ -60,7 +60,7 @@ def parse_document(file_bytes: bytes, mime_type: str, filename: str) -> dict:
         }
         
     # -- TXT and DOCX -> extract text
-    result = ectract_text(file_bytes, mime_type)
+    result = extract_text(file_bytes, mime_type)
     return {
         "success": result["success"],
         "input_type": "text",
