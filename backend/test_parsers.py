@@ -52,7 +52,7 @@ def print_result(label: str, result: dict):
 
 
 def run_tests():
-    print("\n🧪  Document Parser Test Suite")
+    print("\n  Document Parser Test Suite")
     print(f"    Test files directory: {TEST_FILES_DIR}\n")
 
     if not os.path.exists(TEST_FILES_DIR):
@@ -66,7 +66,7 @@ def run_tests():
         return
 
     # ── Test 1: PDF ───────────────────────────────────────────────
-    print("\n📄  TEST 1 — PDF Parser")
+    print("\n  TEST 1 — PDF Parser")
     pdf_bytes = load_file("sample.pdf")
     if pdf_bytes:
         scanned = is_scanned_pdf(pdf_bytes)
@@ -75,7 +75,7 @@ def run_tests():
         print_result("PDF via parser_router", result)
 
     # ── Test 2: PNG Image ─────────────────────────────────────────
-    print("\n🖼   TEST 2 — Image Parser (PNG)")
+    print("\n   TEST 2 — Image Parser (PNG)")
     png_bytes = load_file("sample.png")
     if not png_bytes:
         png_bytes = load_file("sample.jpg")
@@ -90,14 +90,14 @@ def run_tests():
         print_result("Image via parser_router", result)
 
     # ── Test 3: Plain text ────────────────────────────────────────
-    print("\n📝  TEST 3 — Text Parser (.txt)")
+    print("\n  TEST 3 — Text Parser (.txt)")
     txt_bytes = load_file("sample.txt")
     if txt_bytes:
         result = parse_document(txt_bytes, "text/plain", "sample.txt")
         print_result("TXT via parser_router", result)
 
     # ── Test 4: Word document ─────────────────────────────────────
-    print("\n📘  TEST 4 — DOCX Parser (.docx)")
+    print("\n  TEST 4 — DOCX Parser (.docx)")
     docx_bytes = load_file("sample.docx")
     if docx_bytes:
         result = parse_document(
@@ -108,7 +108,7 @@ def run_tests():
         print_result("DOCX via parser_router", result)
 
     # ── Test 5: Quick inline text test (no file needed) ───────────
-    print("\n✅  TEST 5 — Inline TXT (no file needed)")
+    print("\n  TEST 5 — Inline TXT (no file needed)")
     sample_text = b"This is a test document.\nIt has two lines.\nParsing should work fine."
     result = parse_document(sample_text, "text/plain", "inline_test.txt")
     print_result("Inline TXT", result)
