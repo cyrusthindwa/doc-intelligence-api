@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from routes.extract import router as extract_router
 
 app = FastAPI(
     title="AI Doc Intelligence API",
@@ -25,3 +30,6 @@ async def health_check():
         "status": "healthy",
         "version": "1.0.0"
     }
+    
+# Register routes
+app.include_router(extract_router, prefix="/v1", tags=["Extraction"])
