@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from routes.extract import router as extract_router
+from routes.schema import router as schema_router
 
 app = FastAPI(
     title="AI Doc Intelligence API",
@@ -33,3 +34,4 @@ async def health_check():
     
 # Register routes
 app.include_router(extract_router, prefix="/v1", tags=["Extraction"])
+app.include_router(schema_router, prefix="/v1", tags=["Schemas"])

@@ -126,3 +126,22 @@ class UsageLog(Base):
         Index("idx_usage_created", "created_at"),
         Index("idx_usage_status",  "status_code"),
     )
+
+# ── 6. Schemas lookup table ───────────────────────────────────────────────────
+class Schema(Base):
+    __tablename__ = "schemas"
+
+    id           = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name         = Column(String(50),  nullable=False, unique=True)
+    display_name = Column(String(100), nullable=False)
+    description  = Column(Text,        nullable=True)
+    fields       = Column(JSONB,       nullable=False)
+    version      = Column(String(10),  nullable=False, default="1.0")
+    is_active    = Column(Boolean,     nullable=False, default=True)
+    created_at   = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    updated_at   = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_schemas_name",      "name", unique=True),
+        Index("idx_schemas_is_active", "is_active"),
+    )

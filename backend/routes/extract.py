@@ -8,6 +8,7 @@ import json
 
 from services.parser_router import parse_document
 from services.ai_extractor import extract
+from services.schema_service import get_schema_fields, get_all_schema_names
 
 router = APIRouter()
 
@@ -24,26 +25,6 @@ SUPPORTED_MIME_TYPES = {
     "application/vnd.openxmlformats-officedocument.wordpreocessingml.document",
 }
 
-PREDEFINED_SCHEMAS = {
-    "invoice": [
-        "vendor_name", "vendor_address", "invoice_number","invoice_date","due_date","subtotal","tax_amount","total_amount","currency","line_items"
-    ],
-    "identity": [
-        "full_name", "date_of_birth", "id_number",
-        "document_type", "issue_date", "expiry_date",
-        "nationality", "gender"
-    ],
-    "resume": [
-        "full_name", "email", "phone", "location",
-        "summary", "skills", "work_experience",
-        "education", "certifications"
-    ],
-    "medical": [
-        "patient_name", "patient_dob", "doctor_name",
-        "diagnosis", "icd_codes", "medications",
-        "dosage", "visit_date"
-    ],
-}
 
 # -- Helper - build consistent error response --
 def error_resposnse(code: str, message: str, detail: str = None, status: int = 400):
@@ -65,16 +46,17 @@ def error_resposnse(code: str, message: str, detail: str = None, status: int = 4
 def resolve_fields(fields_json: Optional[str], schema: Optional[str]) -> tuple[list[str], str | None]:
     """
     Return (fields_list, error_message).
-    If error_message is not None, the caller should return a 400.
+    Now reads schema definitions from schema_service - single source of truth
     """
     
     #Schema takes priority if provided
     if schema:
         schema = schema.strip().lower()
-        if schema not in PREDEFINED_SCHEMAS:
-            available = ", ".join(PREDEFINED_SCHEMAS.keys())
+        fields = get_schema_fields(schema)
+        if fields is None:
+            available = ", ".join(get_all_schema_names())
             return [], f"Invalid schema '{schema}'. Available: {available}"
-        return PREDEFINED_SCHEMAS[schema], None
+        return fields, None
     
     # Otherwise parse the fields JSON array
     if fields_json:
