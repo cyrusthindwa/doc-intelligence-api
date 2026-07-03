@@ -1,7 +1,8 @@
 import time
 import uuid
 import hashlib
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request, Depends
+from dependencies.rate_limit import enforce_rate_limit
 from fastapi.responses import JSONResponse
 from typing import Optional
 import json
@@ -9,6 +10,7 @@ import json
 from services.parser_router import parse_document
 from services.ai_extractor import extract
 from services.schema_service import get_schema_fields, get_all_schema_names
+
 
 router = APIRouter()
 
@@ -78,11 +80,11 @@ def resolve_fields(fields_json: Optional[str], schema: Optional[str]) -> tuple[l
 
 
 # -- POST /extract --
-@router.post("/extract")
+@router.post("/extract", dependencies=[Depends(enforce_rate_limit)])
 async def extract_document(
     file: UploadFile = File(..., description="Document  to extract data from"),
     fields: Optional[str] = Form(None, description='JSON array e.g ["Vendor","total"]'),
-    schema: Optional[str] = Form(None, description="Predefined schema: invoice|identity|resume|medical"),
+    schema_name: Optional[str] = Form(None, description="Predefined schema: invoice|identity|resume|medical"),
     confidence: Optional[bool] = Form(False, description="Inlcude confidence scores"),
 ):
     start_time = time.time()
@@ -131,7 +133,7 @@ async def extract_document(
         )
         
     # -- 5. Validate fields / schema --
-    resolved_fields, field_error = resolve_fields(fields, schema)
+    resolved_fields, field_error = resolve_fields(fields, schema_name)
     if field_error:
         return error_resposnse(
             code="INVALID_FIELDS",
@@ -182,7 +184,7 @@ async def extract_document(
         },
         "extracted_fields": extraction["extracted_fields"],
         "metadata": {
-            "schema_used": schema or "custom",
+            "schema_used": schema_name or "custom",
             "fields_requested": resolved_fields,
             "processing_time_ms": processing_ms,
             "tokens_used": extraction.get("tokens_used"),
@@ -195,3 +197,4 @@ async def extract_document(
         response_body["confidence_scores"] = extraction["confidence_scores"]
 
     return JSONResponse(status_code=200, content=response_body)
+
