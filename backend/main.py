@@ -9,7 +9,7 @@ from routes.extract import router as extract_router
 from routes.schema import router as schema_router
 from routes.batch import router as batch_router
 from routes.keys import router as keys_router
-from services.redis_client import check_redis_connection
+from services.redis_client import get_redis_connection
 from middleware.auth import auth_middleware
 from middleware.logging import logging_middleware
 
@@ -47,7 +47,7 @@ async def add_rate_limit_headers(request: Request, call_next):
 
 @app.get("/health")
 async def health_check():
-    redis_ok = await check_redis_connection()
+    redis_ok = await get_redis_connection()
     return {
         "status":  "healthy",
         "version": "1.0.0",
