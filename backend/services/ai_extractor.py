@@ -13,7 +13,7 @@ client = anthropic.Anthropic()
 MODEL = "claude-opus-4-5"
 
 # Maximum tokens Claude can return
-MAX_TOKENS = 1048
+MAX_TOKENS = 4096
 
 
 def build_text_prompt(doc_text: str, fields: list[str]) -> str:
