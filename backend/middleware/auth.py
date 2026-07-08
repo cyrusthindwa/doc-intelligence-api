@@ -16,7 +16,7 @@ async def auth_middleware(request: Request, call_next):
     """
 
     # Routes that do not require authentication
-    PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
+    PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json", "/v1/keys"}
 
     if request.url.path in PUBLIC_PATHS:
         return await call_next(request)
