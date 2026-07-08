@@ -47,6 +47,35 @@ async def add_rate_limit_headers(request: Request, call_next):
 
 @app.get("/health")
 async def health_check():
+    """
+    Health check endpoint.
+
+    Returns the overall API health status, version, and the status of
+    downstream services (Redis). Use this endpoint for monitoring and
+    load-balancer health probes.
+
+    ---
+    Example request:
+        GET /health
+
+    Example response (200):
+        {
+            "status": "healthy",
+            "version": "1.0.0",
+            "services": {
+                "redis": "operational"
+            }
+        }
+
+    Example response when Redis is down (200):
+        {
+            "status": "healthy",
+            "version": "1.0.0",
+            "services": {
+                "redis": "down"
+            }
+        }
+    """
     redis_ok = await get_redis_connection()
     return {
         "status":  "healthy",

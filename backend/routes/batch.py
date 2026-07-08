@@ -104,10 +104,87 @@ async def process_single_file(file: UploadFile, fields: list[str], index: int) -
 
 @router.post("/batch", dependencies=[Depends(enforce_rate_limit)])
 async def batch_extract(
-    files: list[UploadFile] = File(..., description="Up to 10 documents"),
-    fields: Optional[str] = Form(None, description='JSON array applied to all documents'),
-    schema_name: Optional[str] = Form(None, description="Predefined schema applied to all documents"),
+    files: list[UploadFile] = File(..., description="Up to 10 documents processed in parallel"),
+    fields: Optional[str] = Form(None, description='JSON array of field names applied to ALL documents in the batch'),
+    schema_name: Optional[str] = Form(None, description="Predefined schema applied to ALL documents in the batch"),
 ):
+    """
+    Batch extract — process up to 10 documents in parallel.
+
+    Upload multiple documents (PDF, images, DOCX, or text) and extract
+    the same set of fields from all of them simultaneously.
+    All files are processed concurrently via asyncio.gather, so the
+    total time is roughly the slowest single document, not the sum of all.
+
+    ---
+    Example request:
+        POST /v1/batch
+        Content-Type: multipart/form-data
+        x-api-key: <your-api-key>
+
+        files: @invoice1.pdf
+        files: @invoice2.pdf
+        files: @invoice3.pdf
+        schema_name: invoice
+
+    Example response (200):
+        {
+            "status": "success",
+            "total_documents": 3,
+            "processed": 3,
+            "failed": 0,
+            "processing_time_ms": 4200,
+            "results": [
+                {
+                    "index": 0,
+                    "filename": "invoice1.pdf",
+                    "status": "success",
+                    "extracted_fields": {
+                        "vendor_name": "Acme Corp",
+                        "total_amount": "$1,250.00"
+                    },
+                    "tokens_used": 450
+                },
+                {
+                    "index": 1,
+                    "filename": "invoice2.pdf",
+                    "status": "success",
+                    "extracted_fields": {
+                        "vendor_name": "Beta Inc",
+                        "total_amount": "$3,400.00"
+                    },
+                    "tokens_used": 512
+                },
+                {
+                    "index": 2,
+                    "filename": "invoice3.pdf",
+                    "status": "failed",
+                    "error": "EMPTY_FILE: File has no content"
+                }
+            ]
+        }
+
+    Example error — no files attached (400):
+        {
+            "status": "error",
+            "error": {
+                "code": "MISSING_FILES",
+                "message": "No files were attached to the request."
+            },
+            "request_id": "..."
+        }
+
+    Example error — batch too large (400):
+        {
+            "status": "error",
+            "error": {
+                "code": "BATCH_TOO_LARGE",
+                "message": "Batch contains 15 files, exceeding the limit of 10.",
+                "detail": "Split into smaller batches and retry."
+            },
+            "request_id": "..."
+        }
+    """
     start_time = time.time()
 
     # Validate batch size
