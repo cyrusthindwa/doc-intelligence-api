@@ -14,7 +14,7 @@ import json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from services.parser_router import parse_document
-from services.ai_extractor import extract
+from services.ai_extractor import extract, get_active_model, get_active_provider
 
 
 TEST_FILES_DIR = os.path.join(os.path.dirname(__file__), "test_files")
@@ -43,7 +43,7 @@ def print_result(label: str, result: dict):
 
 def run():
     print("\n🤖  AI Extractor Test Suite")
-    print(f"    Using model: claude-opus-4-5\n")
+    print(f"    Provider: {get_active_provider()} | Model: {get_active_model()}\n")
 
     # ── Test 1: PDF Invoice ───────────────────────────────────────
     print("\n📄  TEST 1 — PDF Invoice")

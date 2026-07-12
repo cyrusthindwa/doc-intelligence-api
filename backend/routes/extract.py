@@ -7,7 +7,7 @@ from typing import Optional
 import json
 
 from services.parser_router import parse_document
-from services.ai_extractor import extract
+from services.ai_extractor import extract, get_active_model, get_active_provider
 from services.schema_service import get_schema_fields, get_all_schema_names
 
 router = APIRouter()
@@ -186,7 +186,8 @@ async def extract_document(
             "fields_requested": resolved_fields,
             "processing_time_ms": processing_ms,
             "tokens_used": extraction.get("tokens_used"),
-            "model": "claude-opus-4-5",
+            "model": get_active_model(),
+            "provider": get_active_provider(),
         },
     }
 
