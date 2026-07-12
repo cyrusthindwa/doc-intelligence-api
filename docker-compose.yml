@@ -50,7 +50,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/docapi
       REDIS_URL: redis://redis:6379/0
-      CORS_ORIGIN: http://localhost:80
+      CORS_ORIGIN: https://doc-intelligence-api.cyrus-thindwa.me
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,12 +65,34 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
     container_name: docapi_frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - backend
+    networks:
+      - default
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
+      - "traefik.http.routers.docapi-web.entrypoints=web"
+      - "traefik.http.routers.docapi-web.middlewares=redirect-to-https@file"
+      - "traefik.http.routers.docapi-web.rule=Host(`doc-intelligence-api.cyrus-thindwa.me`)"
+      - "traefik.http.routers.docapi-web.service=docapi-web"
+      - "traefik.http.routers.docapi-websecure.entrypoints=websecure"
+      - "traefik.http.routers.docapi-websecure.rule=Host(`doc-intelligence-api.cyrus-thindwa.me`)"
+      - "traefik.http.routers.docapi-websecure.service=docapi-websecure"
+      - "traefik.http.routers.docapi-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.docapi-web.loadbalancer.server.port=80"
+      - "traefik.http.services.docapi-websecure.loadbalancer.server.port=80"
+
+networks:
+  dokploy-network:
+    external: true
 
 volumes:
   postgres_data:

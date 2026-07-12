@@ -1,7 +1,8 @@
 import time
 import uuid
 import hashlib
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request, Depends
+from dependencies.rate_limit import enforce_rate_limit
 from fastapi.responses import JSONResponse
 from typing import Optional
 import json
@@ -9,6 +10,7 @@ import json
 from services.parser_router import parse_document
 from services.ai_extractor import extract, get_active_model, get_active_provider
 from services.schema_service import get_schema_fields, get_all_schema_names
+
 
 router = APIRouter()
 
@@ -78,13 +80,105 @@ def resolve_fields(fields_json: Optional[str], schema: Optional[str]) -> tuple[l
 
 
 # -- POST /extract --
-@router.post("/extract")
+@router.post("/extract", dependencies=[Depends(enforce_rate_limit)])
 async def extract_document(
-    file: UploadFile = File(..., description="Document  to extract data from"),
-    fields: Optional[str] = Form(None, description='JSON array e.g ["Vendor","total"]'),
-    schema: Optional[str] = Form(None, description="Predefined schema: invoice|identity|resume|medical"),
-    confidence: Optional[bool] = Form(False, description="Inlcude confidence scores"),
+    file: UploadFile = File(..., description="Document to extract data from"),
+    fields: Optional[str] = Form(None, description='JSON array of custom field names e.g. ["vendor_name","total"]'),
+    schema_name: Optional[str] = Form(None, description="Predefined schema name. One of: invoice, identity, resume, medical"),
+    confidence: Optional[bool] = Form(False, description="Include per-field confidence scores in the response"),
 ):
+    """
+    Extract structured data from a document.
+
+    Upload a document (PDF, image, DOCX, or plain text) and extract
+    structured fields using AI. You must specify either a `schema_name`
+    (predefined template) or `fields` (custom list of field names).
+
+    ---
+    Example request (using a predefined schema):
+        POST /v1/extract
+        Content-Type: multipart/form-data
+        x-api-key: <your-api-key>
+
+        file: @invoice.pdf
+        schema_name: invoice
+
+    Example response (200):
+        {
+            "status": "success",
+            "request_id": "a1b2c3d4-...",
+            "document": {
+                "filename": "invoice.pdf",
+                "mime_type": "application/pdf",
+                "file_size_bytes": 245760,
+                "page_count": 2,
+                "word_count": 340,
+                "input_type": "pdf",
+                "checksum": "a1b2c3d4e5f6g7h8"
+            },
+            "extracted_fields": {
+                "vendor_name": "Acme Corp",
+                "invoice_number": "INV-2024-001",
+                "total_amount": "$1,250.00",
+                "currency": "USD"
+            },
+            "metadata": {
+                "schema_used": "invoice",
+                "fields_requested": ["vendor_name", "invoice_number", "total_amount", "currency"],
+                "processing_time_ms": 3450,
+                "tokens_used": 892,
+                "model": "claude-opus-4-5"
+            }
+        }
+
+    Example request (custom fields):
+        POST /v1/extract
+        Content-Type: multipart/form-data
+        x-api-key: <your-api-key>
+
+        file: @resume.pdf
+        fields: ["name","email","skills"]
+
+    Example response with confidence scores (200):
+        {
+            "status": "success",
+            "request_id": "b2c3d4e5-...",
+            "document": { "...": "..." },
+            "extracted_fields": {
+                "name": "John Doe",
+                "email": "john@example.com",
+                "skills": ["Python", "FastAPI", "React"]
+            },
+            "confidence_scores": {
+                "name": 0.98,
+                "email": 0.99,
+                "skills": 0.85
+            },
+            "metadata": { "...": "..." }
+        }
+
+    Example error — missing fields (400):
+        {
+            "status": "error",
+            "error": {
+                "code": "INVALID_FIELDS",
+                "message": "Either 'fields' or 'schema' is required",
+                "detail": "Provide either 'schema' (invoice|identity|resume|medical) or 'fields' as a JSON array."
+            },
+            "request_id": "c3d4e5f6-..."
+        }
+
+    Example error — unsupported file type (400):
+        {
+            "status": "error",
+            "error": {
+                "code": "UNSUPPORTED_FILE_TYPE",
+                "message": "File type 'application/xml' is not supported.",
+                "detail": "Supported types: PDF, PNG, JPEG, WEBP, TXT, DOCX."
+            },
+            "request_id": "d4e5f6a7-..."
+        }
+    """
     start_time = time.time()
     request_id = str(uuid.uuid4())
     
@@ -131,7 +225,7 @@ async def extract_document(
         )
         
     # -- 5. Validate fields / schema --
-    resolved_fields, field_error = resolve_fields(fields, schema)
+    resolved_fields, field_error = resolve_fields(fields, schema_name)
     if field_error:
         return error_resposnse(
             code="INVALID_FIELDS",
@@ -182,7 +276,7 @@ async def extract_document(
         },
         "extracted_fields": extraction["extracted_fields"],
         "metadata": {
-            "schema_used": schema or "custom",
+            "schema_used": schema_name or "custom",
             "fields_requested": resolved_fields,
             "processing_time_ms": processing_ms,
             "tokens_used": extraction.get("tokens_used"),
@@ -196,3 +290,4 @@ async def extract_document(
         response_body["confidence_scores"] = extraction["confidence_scores"]
 
     return JSONResponse(status_code=200, content=response_body)
+

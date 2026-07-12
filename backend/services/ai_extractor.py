@@ -8,8 +8,8 @@ load_dotenv()
 # Set AI_PROVIDER in .env to "groq" or "anthropic" (default)
 AI_PROVIDER = os.getenv("AI_PROVIDER", "anthropic").strip().lower()
 
-# Maximum tokens the model can return
-MAX_TOKENS = 1048
+# Maximum tokens Claude can return
+MAX_TOKENS = 4096
 
 
 # ── Provider-specific config ──────────────────────────────────
