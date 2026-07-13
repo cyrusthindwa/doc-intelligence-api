@@ -9,8 +9,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from dotenv import load_dotenv
 
-# Load .env from root folder( one leve up from backend)
-load_dotenv()
+# Only load .env in local dev, not in Docker
+if not os.getenv("DOCKER_ENV"):
+    load_dotenv()
 
 # Import your base and all models so alembic can see them
 from database import Base

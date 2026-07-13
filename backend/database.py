@@ -3,7 +3,9 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+# Only load .env in local dev, not in Docker (where env vars come from compose)
+if not os.getenv("DOCKER_ENV"):
+    load_dotenv()
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",

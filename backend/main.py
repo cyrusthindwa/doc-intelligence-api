@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Only load .env in local dev, not in Docker
+if not os.getenv("DOCKER_ENV"):
+    load_dotenv()
 
 from routes.extract import router as extract_router
 from routes.schema import router as schema_router

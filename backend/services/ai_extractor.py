@@ -2,7 +2,9 @@ import json
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Only load .env in local dev, not in Docker
+if not os.getenv("DOCKER_ENV"):
+    load_dotenv()
 
 # ── Provider configuration ────────────────────────────────────
 # Set AI_PROVIDER in .env to "groq" or "anthropic" (default)

@@ -2,7 +2,9 @@ import os
 import redis.asyncio as redis
 from dotenv import load_dotenv
 
-load_dotenv()
+# Only load .env in local dev, not in Docker
+if not os.getenv("DOCKER_ENV"):
+    load_dotenv()
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
