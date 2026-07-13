@@ -75,7 +75,7 @@ services:
       - default
       - dokploy-network
     expose:
-      - "80"
+      - "8080"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=dokploy-network"
@@ -87,8 +87,8 @@ services:
       - "traefik.http.routers.docapi-websecure.rule=Host(`doc-intelligence-api.cyrus-thindwa.me`)"
       - "traefik.http.routers.docapi-websecure.service=docapi-websecure"
       - "traefik.http.routers.docapi-websecure.tls.certresolver=letsencrypt"
-      - "traefik.http.services.docapi-web.loadbalancer.server.port=80"
-      - "traefik.http.services.docapi-websecure.loadbalancer.server.port=80"
+      - "traefik.http.services.docapi-web.loadbalancer.server.port=8080"
+      - "traefik.http.services.docapi-websecure.loadbalancer.server.port=8080"
 
 networks:
   dokploy-network:
