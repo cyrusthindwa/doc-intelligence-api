@@ -14,6 +14,10 @@ from routes.keys import router as keys_router
 from services.redis_client import get_redis_connection
 from middleware.auth import auth_middleware
 from middleware.logging import logging_middleware
+from database import engine, Base, AsyncSessionLocal
+from services.auth_service import create_api_key
+from sqlalchemy import select, func
+from models.schemas import APIKey
 
 app = FastAPI(
     title="AI Document Intelligence API",
@@ -22,6 +26,22 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+
+# ── Startup: auto-create tables & seed default API key ─────────
+@app.on_event("startup")
+async def startup():
+    """Create tables if they don't exist and seed a default API key."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    # Seed a default demo key if no keys exist
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(func.count()).select_from(APIKey))
+        count = result.scalar()
+        if count == 0:
+            await create_api_key(name="Default Demo Key", plan="demo", db=db)
+            print("✅ Seeded default demo API key")
 
 # ── Middleware (order matters — runs bottom to top on request) ────────────────
 app.add_middleware(CORSMiddleware,
