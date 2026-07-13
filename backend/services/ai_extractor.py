@@ -18,7 +18,7 @@ MAX_TOKENS = 4096
 if AI_PROVIDER == "groq":
     from groq import Groq
 
-    MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+    MODEL = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
     VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "llama-3.2-90b-vision-preview")
 
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -57,13 +57,8 @@ if AI_PROVIDER == "groq":
         return raw, tokens
 
     # Error mapping for Groq
-    try:
-        from groq import AuthenticationError as _GroqAuthError, RateLimitError as _GroqRateLimitError
-        _AuthError = _GroqAuthError
-        _RateLimitError = _GroqRateLimitError
-    except ImportError:
-        _AuthError = Exception
-        _RateLimitError = Exception
+    _AuthError = Exception  # Groq uses generic exceptions; handled in try/except
+    _RateLimitError = Exception
 
 else:
     # Default: Anthropic
