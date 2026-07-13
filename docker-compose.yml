@@ -47,8 +47,8 @@ services:
       - "8000:8000"
     environment:
       DOCKER_ENV: "1"
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/docapi
-      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@docapi_postgres:5432/docapi
+      REDIS_URL: redis://docapi_redis:6379/0
       CORS_ORIGIN: https://doc-intelligence-api.cyrus-thindwa.me
       AI_PROVIDER: ${AI_PROVIDER:-groq}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
